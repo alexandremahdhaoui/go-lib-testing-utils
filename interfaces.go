@@ -33,7 +33,6 @@ type HttpTester interface {
 
 type HttpConfigBuilder interface {
 	Build() HttpConfig
-
 	SetCookies(string, []*http.Cookie) HttpConfigBuilder
 	SetHttpClient(*http.Client) HttpConfigBuilder
 	SetProxy(string) HttpConfigBuilder
