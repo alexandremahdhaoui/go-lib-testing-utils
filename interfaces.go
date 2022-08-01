@@ -25,12 +25,6 @@ type TlsTester interface {
 	TlsConfig() *tls.Config
 }
 
-type HttpTester interface {
-	HttpClient() *http.Client
-	Tester
-	TlsConfig() *tls.Config
-}
-
 type HttpConfigBuilder interface {
 	Build() HttpConfig
 	SetCookies(string, []*http.Cookie) HttpConfigBuilder
