@@ -60,109 +60,87 @@ func HttpGetWithRetry(t TlsTester, url string, wantCode, retries int, sleep time
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------ Struct --------------------------------------------------------
+//------------------------------------------------ HttpConfigBuilder ---------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
 
-type HttpConfig struct {
-	// Getter
-	HttpClientGetter
-	Tester
-	TlsConfigGetter
+type httpConfigBuilder struct {
+	HttpConfigBuilder
+	httpConfig httpConfig
+}
 
-	// Setters
-	CookieSetter
-	HttpClientSetter
-	ProxySetter
-	TestSetter
-	TlsConfigSetter
+func NewHttpConfigBuilder() HttpConfigBuilder {
+	b := httpConfigBuilder{httpConfig: httpConfig{}}
+	return &b
+}
 
-	// Fields
+func (b *httpConfigBuilder) Build() HttpConfig {
+	return &b.httpConfig
+}
+
+func (b *httpConfigBuilder) SetCookies(uri string, cookies []*http.Cookie) HttpConfigBuilder {
+	parsedUri, err := url.Parse(uri)
+	require.NoError(b.httpConfig.T(), err)
+	b.httpConfig.HttpClient().Jar.SetCookies(parsedUri, cookies)
+	return b
+}
+
+func (b *httpConfigBuilder) SetHttpClient(hc *http.Client) HttpConfigBuilder {
+	b.httpConfig.httpClient = hc
+	return b
+}
+
+func (b *httpConfigBuilder) SetProxy(uri string) HttpConfigBuilder {
+	parsedUrl, err := url.Parse(uri)
+	require.NoError(b.httpConfig.T(), err)
+	b.httpConfig.httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(parsedUrl)}
+	return b
+}
+
+func (b *httpConfigBuilder) SetT(t *testing.T) HttpConfigBuilder {
+	b.httpConfig.t = t
+	return b
+}
+
+func (b *httpConfigBuilder) SetTlsConfig(tc *tls.Config) HttpConfigBuilder {
+	b.httpConfig.tlsConfig = tc
+	return b
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------- HttpConfig -----------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+
+type httpConfig struct {
+	HttpConfig
 	httpClient *http.Client
 	t          *testing.T
 	tlsConfig  *tls.Config
 }
 
 func NewHttpConfig(t *testing.T) HttpConfig {
-	h := HttpConfig{}
+	b := NewHttpConfigBuilder()
 	hc := &http.Client{}
 
-	h.SetT(t)
-	h.SetHttpClient(hc)
-	h.SetTlsConfig(&tls.Config{})
+	b.
+		SetT(t).
+		SetHttpClient(hc).
+		SetTlsConfig(&tls.Config{})
 
 	jar, err := cookiejar.New(nil)
 	require.NoError(t, err)
 	hc.Jar = jar
 
-	return h
+	return b.Build()
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-//---------------------------------------------------- Interfaces ------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------
-
-type TlsTester interface {
-	Tester
-	TlsConfigGetter
-}
-
-type HttpTester interface {
-	HttpClientGetter
-	Tester
-	TlsConfigGetter
-}
-
-type HttpClientGetter interface{ HttpClient() *http.Client }
-type TlsConfigGetter interface{ TlsConfig() *tls.Config }
-
-type CookieSetter interface{ SetCookies(string, []*http.Cookie) }
-type HttpClientSetter interface{ SetHttpClient(*http.Client) }
-type ProxySetter interface{ SetProxy(string) }
-type TestSetter interface{ SetT(*testing.T) }
-type TlsConfigSetter interface{ SetTlsConfig(*tls.Config) }
-
-//----------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------ Getters -------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------
-
-func (h *HttpConfig) T() *testing.T {
+func (h *httpConfig) T() *testing.T {
 	return h.t
 }
 
-func (h *HttpConfig) HttpClient() *http.Client {
+func (h *httpConfig) HttpClient() *http.Client {
 	return h.httpClient
 }
 
-func (h *HttpConfig) TlsConfig() *tls.Config {
+func (h *httpConfig) TlsConfig() *tls.Config {
 	return h.tlsConfig
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------ Setters -------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------
-
-func (h *HttpConfig) SetCookies(uri string, cookies []*http.Cookie) {
-	parsedUri, err := url.Parse(uri)
-	require.NoError(h.T(), err)
-
-	h.HttpClient().Jar.SetCookies(parsedUri, cookies)
-}
-
-func (h *HttpConfig) SetHttpClient(hc *http.Client) {
-	h.httpClient = hc
-}
-
-func (h *HttpConfig) SetProxy(uri string) {
-	parsedUrl, err := url.Parse(uri)
-	require.NoError(h.T(), err)
-
-	h.httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(parsedUrl)}
-}
-
-func (h *HttpConfig) SetT(t *testing.T) {
-	h.t = t
-}
-
-func (h *HttpConfig) SetTlsConfig(tc *tls.Config) {
-	h.tlsConfig = tc
 }
