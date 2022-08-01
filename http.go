@@ -69,8 +69,7 @@ type httpConfigBuilder struct {
 }
 
 func NewHttpConfigBuilder() HttpConfigBuilder {
-	b := httpConfigBuilder{httpConfig: httpConfig{}}
-	return &b
+	return &httpConfigBuilder{httpConfig: httpConfig{}}
 }
 
 func (b *httpConfigBuilder) Build() HttpConfig {
