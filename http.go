@@ -26,7 +26,7 @@ func AssertHttpRes(t Tester, res *http.Response, wantBody string, wantCode int) 
 	assert.Contains(t.T(), gotBody, wantBody)
 }
 
-func HttpGet(h HttpTester, uri string) *http.Response {
+func HttpGet(h HttpConfig, uri string) *http.Response {
 	req, err := http.NewRequest("GET", uri, nil)
 	assert.NoError(h.T(), err)
 
@@ -35,7 +35,7 @@ func HttpGet(h HttpTester, uri string) *http.Response {
 	return res
 }
 
-func HttpGetAndAssert(h HttpTester, uri, wantBody string, wantCode int) {
+func HttpGetAndAssert(h HttpConfig, uri, wantBody string, wantCode int) {
 	res := HttpGet(h, uri)
 	AssertHttpRes(h, res, wantBody, wantCode)
 }
@@ -69,8 +69,7 @@ type httpConfigBuilder struct {
 }
 
 func NewHttpConfigBuilder() HttpConfigBuilder {
-	b := httpConfigBuilder{httpConfig: httpConfig{}}
-	return &b
+	return &httpConfigBuilder{httpConfig: httpConfig{}}
 }
 
 func (b *httpConfigBuilder) Build() HttpConfig {
